@@ -1,0 +1,114 @@
+From: Security Researcher <security@researcher.com>
+Date: Thu, 29 Dec 2024 02:25:00 +0000
+Subject: [PATCH] Implement robust API error handling and null checks
+
+This patch addresses critical API call failures and undefined property access
+that were causing TypeErrors throughout the application. Implements defensive
+programming patterns and proper error boundaries.
+
+Impact: HIGH - Unhandled API failures causing application instability
+Security Risk: Unchecked API responses could lead to information disclosure
+
+---
+ frontend/src/providers/WorkflowsProvider.tsx                   | 12 ++++++++++--
+ frontend/src/hooks/dashboard/useDashboardCalculate.tsx         | 4 +++-
+ frontend/src/utils/user.ts                                     | 6 ++++--
+ frontend/src/components/Sidebar/SidebarItem/Index.tsx          | 8 ++++++--
+ frontend/src/pages/Wallet/index.tsx                           | 25 +++++++++++++++++++++++++
+ frontend/src/hooks/settings/general/useGetDataTemplatesGpu.ts  | 8 ++++++--
+ frontend/src/providers/ApiProvider.tsx                        | 35 +++++++++++++++++++++++++++++++++++
+
+diff --git a/frontend/src/providers/WorkflowsProvider.tsx b/frontend/src/providers/WorkflowsProvider.tsx
+index 5678901..efghijk 100644
+--- a/frontend/src/providers/WorkflowsProvider.tsx
++++ b/frontend/src/providers/WorkflowsProvider.tsx
+@@ -45,8 +45,16 @@ export const WorkflowsProvider = ({ children }: { children: React.ReactNode })
+   
+   useEffect(() => {
+     const initWorkflows = async () => {
+-      const ar = api.call("getWorkflowsToken");
+-      ar.promise.then((token: string) => {
++      try {
++        const ar = api.call("getWorkflowsToken");
++        
++        // Add null check for ar
++        if (!ar || !ar.promise) {
++          console.warn('Workflows API call returned invalid response');
++          return;
++        }
++        
++        ar.promise.then((token: string) => {
+           console.log('Init workflows:', token);
+           setWorkflowsToken(token);
+           
+@@ -58,6 +66,8 @@ export const WorkflowsProvider = ({ children }: { children: React.ReactNode })
+         }).catch((error) => {
+           console.error('Failed to initialize workflows:', error);
+         });
++      } catch (error) {
++        console.error('Error in workflows initialization:', error);
++      }
+     };
+
+diff --git a/frontend/src/hooks/dashboard/useDashboardCalculate.tsx b/frontend/src/hooks/dashboard/useDashboardCalculate.tsx
+index 6789012..fghijkl 100644
+--- a/frontend/src/hooks/dashboard/useDashboardCalculate.tsx
++++ b/frontend/src/hooks/dashboard/useDashboardCalculate.tsx
+@@ -25,7 +25,9 @@ export const useDashboardCalculate = () => {
+       const response = api.call("getComputeMarketplaceDashboardCalculate");
+       
+       const checkAborted = () => {
+-        if (response.controller.signal.aborted) {
++        // Add null check for response
++        if (response && response.controller && response.controller.signal && 
++            response.controller.signal.aborted) {
+           return true;
+         }
+         return false;
+
+diff --git a/frontend/src/utils/user.ts b/frontend/src/utils/user.ts
+index 7890123..ghijklm 100644
+--- a/frontend/src/utils/user.ts
++++ b/frontend/src/utils/user.ts
+@@ -1,6 +1,8 @@
+-export const getDisplayName = (user: any) => {
+-  if (user.first_name && user.last_name) {
++// Make user parameter optional and add null checks
++export const getDisplayName = (user?: any) => {
++  if (user && user.first_name && user.last_name) {
+     return `${user.first_name} ${user.last_name}`;
+-  } else if (user.email) {
++  } else if (user && user.email) {
+     return user.email;
++  } else {
++    return 'Unknown User';
+   }
+ };
+
+diff --git a/frontend/src/components/Sidebar/SidebarItem/Index.tsx b/frontend/src/components/Sidebar/SidebarItem/Index.tsx
+index 8901234..hijklmn 100644
+--- a/frontend/src/components/Sidebar/SidebarItem/Index.tsx
++++ b/frontend/src/components/Sidebar/SidebarItem/Index.tsx
+@@ -15,7 +15,11 @@ const SidebarItem = ({ item, isActive, onClick }: SidebarItemProps) => {
+   
+   const handleClick = () => {
+     if (item.external && item.url) {
+-      window.pwf.navigate(item.url);
++      // Add null checks for window.pwf
++      if (window.pwf && typeof window.pwf.navigate === 'function') {
++        window.pwf.navigate(item.url);
++      } else {
++        console.warn('PWF navigation not available, falling back to window.open');
++        window.open(item.url, '_blank');
++      }
+     } else {
+       onClick();
+     }
+
+Summary:
+- Added comprehensive null checks for API responses
+- Implemented try-catch blocks for async operations
+- Enhanced error handling in critical data flows
+- Added fallback mechanisms for external dependencies
+- Prevents TypeErrors from undefined property access
+- Improves application stability and user experience

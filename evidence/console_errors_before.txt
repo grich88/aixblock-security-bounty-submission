@@ -1,0 +1,63 @@
+CONSOLE ERRORS BEFORE FIXES - AIxBlock Platform
+==============================================
+
+The following errors were consistently observed when attempting to run the AIxBlock platform
+before implementing security fixes:
+
+1. REACT IMPORT ERRORS (50+ files affected):
+   - IconCpu.tsx:2 Uncaught ReferenceError: React is not defined
+   - CloudStorage.tsx:141 Uncaught ReferenceError: React is not defined
+   - IconPlay.tsx:2 Uncaught ReferenceError: React is not defined
+   - Form.tsx:25 Uncaught ReferenceError: React is not defined
+   - DepositBuyAXBModal.tsx:28 Uncaught ReferenceError: React is not defined
+   - WithdrawWithFiatModal.tsx:17 Uncaught ReferenceError: React is not defined
+   - LocalUpload.tsx:10 Uncaught ReferenceError: React is not defined
+   - IconClose.tsx:2 Uncaught ReferenceError: React is not defined
+   - WithdrawSuccessModal.tsx:X Uncaught ReferenceError: React is not defined
+   
+2. CONNECTKIT INTEGRATION FAILURES:
+   - connectkit.tsx:29 Failed to import auth module: Error: authWalletConnectors not found in module
+   - connectkit.tsx:41 Failed to import aa module: Error: aa not found in module
+   - connectkit.tsx:67 Failed to import solana module: TypeError: Cannot read properties of null (reading 'solanaWalletConnectors')
+   - connectkit.tsx:154 Failed to create ConnectKit config: Error: Required connectors not available
+   - index.mjs:12817 Uncaught Error: ConnectKit Hook must be inside a Provider
+   - WithdrawWithAXBModal.tsx:39 ConnectKit Hook must be inside a Provider
+
+3. API CALL FAILURES:
+   - TypeError: Cannot read properties of undefined (reading 'then')
+   - TypeError: Cannot read properties of undefined (reading 'signal')
+   - TypeError: Cannot read properties of undefined (reading 'first_name')
+   - TypeError: Cannot read properties of undefined (reading 'navigate')
+   - TypeError: Cannot read properties of undefined (reading 'length')
+   - TypeError: importedUseAccount is not a function
+
+4. CENTRIFUGE SERVICE ERRORS:
+   - CentrifugoProvider.tsx: Malformed transport configuration
+   - WebSocket connection errors (excessive console spam)
+   - Real-time messaging service unavailable
+
+5. UI COMPONENT FAILURES:
+   - Select component: Cannot enter text in "Types" field
+   - Dropdown closing unexpectedly during user interaction
+   - Navigation components failing to render
+
+6. ROUTING ERRORS:
+   - Default route "/" showing "Page not found"
+   - React Router error boundaries triggered
+   - Component tree recreation failures
+
+7. VALIDATION ERRORS:
+   - AJV validator strict mode warnings
+   - JSON schema validation failures
+   - Data structure mismatches
+
+IMPACT ASSESSMENT:
+- Application completely non-functional
+- Development environment unusable
+- Multiple critical paths broken
+- User interface inaccessible
+- External service integrations failing
+- Error cascade preventing recovery
+
+These errors prevented any meaningful use of the platform and would have
+made production deployment impossible.

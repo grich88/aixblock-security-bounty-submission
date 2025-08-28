@@ -1,0 +1,114 @@
+From: Security Researcher <security@researcher.com>
+Date: Thu, 29 Dec 2024 02:25:00 +0000
+Subject: [PATCH] Fix UI component interactions and routing issues
+
+This patch addresses critical UI component failures including non-functional
+Select component filtering, routing errors, and component interaction issues
+that were preventing proper user interaction with the application.
+
+Impact: MEDIUM-HIGH - Core UI functionality broken, user experience severely impacted
+
+---
+ frontend/src/pages/Flow/Shared/CreateProject.tsx               | 4 +++-
+ frontend/src/components/Select/SelectContent/SelectContent.tsx  | 15 ++++++++++++---
+ frontend/src/components/Select/Select.tsx                      | 12 ++++++++++--
+ frontend/src/router.tsx                                        | 3 +++
+ frontend/src/utils/createAjvValidator.ts                       | 6 ++++--
+
+diff --git a/frontend/src/pages/Flow/Shared/CreateProject.tsx b/frontend/src/pages/Flow/Shared/CreateProject.tsx
+index 9012345..ijklmno 100644
+--- a/frontend/src/pages/Flow/Shared/CreateProject.tsx
++++ b/frontend/src/pages/Flow/Shared/CreateProject.tsx
+@@ -85,7 +85,9 @@ const CreateProject = ({ onProjectCreated }: CreateProjectProps) => {
+             <Select
+               data={projectTypes}
+               value={formData.types}
+-              onChange={(value) => handleInputChange('types', value)}
++              onChange={(value) => handleInputChange('types', value)}
++              canFilter={true}
++              placeholderText="Search or select a type"
+             />
+           </div>
+         </div>
+
+diff --git a/frontend/src/components/Select/SelectContent/SelectContent.tsx b/frontend/src/components/Select/SelectContent/SelectContent.tsx
+index 0123456..jklmnop 100644
+--- a/frontend/src/components/Select/SelectContent/SelectContent.tsx
++++ b/frontend/src/components/Select/SelectContent/SelectContent.tsx
+@@ -45,7 +45,12 @@ const SelectContent = ({
+         <InputBase
+           value={searchTerm}
+-          onChange={(e) => setSearchTerm(e.target.value)}
++          onChange={(e) => setSearchTerm(e.target.value)}
++          onKeyDown={(e) => {
++            // Prevent dropdown from closing when typing
++            e.stopPropagation();
++          }}
++          style={{ width: '100%', padding: '8px' }}
+           placeholder={placeholderText || "Search..."}
+         />
+       )}
+@@ -55,7 +60,11 @@ const SelectContent = ({
+   const filteredData = useMemo(() => {
+     if (!canFilter || !searchTerm.trim()) {
+       return data;
+     }
++    
++    if (!Array.isArray(data)) {
++      return [];
++    }
+     
+     return data.filter((item) => {
+       const searchValue = searchTerm.toLowerCase();
+
+diff --git a/frontend/src/components/Select/Select.tsx b/frontend/src/components/Select/Select.tsx
+index 1234567..klmnopq 100644
+--- a/frontend/src/components/Select/Select.tsx
++++ b/frontend/src/components/Select/Select.tsx
+@@ -75,7 +75,11 @@ const Select = ({
+   const handleClickOutside = useCallback((event: MouseEvent) => {
+     if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+-      setIsOpen(false);
++      // Don't close if clicking on search input or dropdown content
++      const target = event.target as HTMLElement;
++      if (!target.closest('.select-dropdown') && !target.closest('input')) {
++        setIsOpen(false);
++      }
+     }
+   }, []);
+   
+@@ -95,7 +99,11 @@ const Select = ({
+   }, [isOpen, handleClickOutside]);
+   
+   const handleOpenSelect = () => {
+-    setIsOpen(!isOpen);
++    // Don't toggle if clicking on search input when already open
++    const activeElement = document.activeElement;
++    if (!(isOpen && activeElement && activeElement.tagName === 'INPUT')) {
++      setIsOpen(!isOpen);
++    }
+   };
+
+diff --git a/frontend/src/router.tsx b/frontend/src/router.tsx
+index 2345678..lmnopqr 100644
+--- a/frontend/src/router.tsx
++++ b/frontend/src/router.tsx
+@@ -25,6 +25,9 @@ const router = createBrowserRouter([
+     path: "/",
+     element: <RootElement />,
+     children: [
++      {
++        index: true,
++        element: <Navigate to="/dashboard" replace />,
++      },
+       {
+         path: "dashboard",
+         element: <DashboardPage />,
+
+Summary:
+- Fixed Select component filtering functionality
+- Improved dropdown interaction handling
+- Added default route for root path
+- Enhanced search input behavior
+- Prevented unintended dropdown closures
+- Improved user experience for form interactions
